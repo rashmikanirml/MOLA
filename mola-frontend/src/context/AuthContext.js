@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   });
 
   const setAuth = ({ username, password }) => {
+
     const role = username === "admin" ? "ADMIN" : "USER";
 
     setAuthState({
