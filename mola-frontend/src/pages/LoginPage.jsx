@@ -1,84 +1,59 @@
 import React, { useState, useContext } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import api from "../api/api";
 
 function LoginPage() {
-
-  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-
-    if (!username || !password) {
-      alert("Please enter username and password");
-      return;
-    }
-
+  const handleLogin = async () => {
     try {
-      setLoading(true);
+      const response = await axios.post(
+        "http://localhost:8080/api/auth/login",
+        { username, password }
+      );
 
-      const response = await api.post("/auth/login", {
-        username,
-        password
-      });
+      const { token, role } = response.data;
 
-      // Save JWT + role
-      login(response.data.token, response.data.role);
+      login(token, role);
 
-      navigate("/dashboard");
-
+      navigate("/bookings");
     } catch (error) {
       alert("Invalid credentials");
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
+    <div className="flex items-center justify-center h-screen bg-gray-900">
+      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
+        <h2 className="text-white text-2xl mb-6 text-center">Login</h2>
 
-      <div className="bg-white/10 backdrop-blur-lg shadow-2xl rounded-2xl p-10 w-96 text-white">
+        <input
+          className="w-full p-2 mb-4 rounded bg-gray-700 text-white"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
 
-        <h1 className="text-3xl font-bold mb-6 text-center">
-          MOLA Login
-        </h1>
+        <input
+          className="w-full p-2 mb-6 rounded bg-gray-700 text-white"
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-        <form onSubmit={handleLogin} className="space-y-4">
-
-          <input
-            type="text"
-            placeholder="Username"
-            className="w-full px-4 py-2 rounded-lg bg-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full px-4 py-2 rounded-lg bg-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-500"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-purple-600 hover:bg-purple-700 transition py-2 rounded-lg font-semibold"
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
-
-        </form>
-
+        <button
+          onClick={handleLogin}
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white p-2 rounded"
+        >
+          Login
+        </button>
       </div>
-
     </div>
   );
 }
