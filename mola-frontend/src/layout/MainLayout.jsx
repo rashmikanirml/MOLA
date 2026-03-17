@@ -5,77 +5,59 @@ function MainLayout({ children, role }) {
   const [open, setOpen] = useState(true);
   const navigate = useNavigate();
 
-  return (
-    <div className="flex min-h-screen bg-slate-900 text-white">
+  const navItems = [
+    { path: "/dashboard", label: "Overview" },
+    { path: "/bookings", label: "Bookings" },
+    { path: "/resources", label: "Resources" },
+  ];
 
-      {/* Sidebar */}
+  if (role === "ROLE_ADMIN") {
+    navItems.push({ path: "/users", label: "Users" });
+  }
+
+  return (
+    <div className="flex min-h-screen bg-[radial-gradient(circle_at_top_right,#0f2a3d,transparent_40%),radial-gradient(circle_at_bottom_left,#20152f,transparent_35%),#081018] text-white">
       <div
-        className={`bg-slate-950 transition-all duration-300 
-        ${open ? "w-64" : "w-20"} 
-        flex flex-col shadow-xl`}
+        className={`border-r border-white/10 bg-black/25 backdrop-blur-xl transition-all duration-300 ${open ? "w-64" : "w-20"} flex flex-col shadow-xl`}
       >
-        {/* Logo */}
-        <div className="p-6 font-bold text-xl border-b border-slate-800 flex justify-between items-center">
-          {open ? "MOLA" : "M"}
+        <div className="p-6 font-bold text-xl border-b border-white/10 flex justify-between items-center">
+          {open ? "Campus Hub" : "CH"}
           <button
             onClick={() => setOpen(!open)}
-            className="text-sm text-slate-400"
+            className="text-sm text-slate-300"
           >
-            ☰
+            |||
           </button>
         </div>
 
-        {/* Nav Items */}
         <nav className="flex-1 p-4 space-y-3">
-
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-800 transition"
-          >
-            📊 {open && "Dashboard"}
-          </button>
-
-          <button
-            onClick={() => navigate("/bookings")}
-            className="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-800 transition"
-          >
-            📅 {open && "Bookings"}
-          </button>
-
-          <button
-            onClick={() => navigate("/resources")}
-            className="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-800 transition"
-          >
-            🏢 {open && "Resources"}
-          </button>
-
-          {role === "ADMIN" && (
+          {navItems.map((item) => (
             <button
-              onClick={() => navigate("/users")}
-              className="w-full text-left px-4 py-2 rounded-lg hover:bg-slate-800 transition"
+              key={item.path}
+              onClick={() => navigate(item.path)}
+              className="w-full text-left px-4 py-2 rounded-lg hover:bg-white/10 transition"
             >
-              👤 {open && "Users"}
+              {open && item.label}
             </button>
-          )}
-
+          ))}
         </nav>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-white/10">
+          <div className="mb-3 rounded-lg bg-white/10 px-3 py-2 text-xs">
+            Role: {role || "N/A"}
+          </div>
           <button
             onClick={() => navigate("/")}
-            className="w-full bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition"
+            className="w-full bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg transition"
           >
-            {open ? "Logout" : "🚪"}
+            {open ? "Logout" : "Out"}
           </button>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-10">
+      <div className="flex-1 p-6 md:p-10">
         {children}
       </div>
-
     </div>
   );
 }

@@ -9,6 +9,7 @@ function LoginPage() {
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleLogin = async () => {
     try {
@@ -20,27 +21,31 @@ function LoginPage() {
       const { token, role } = response.data;
 
       login(token, role);
-
-      navigate("/bookings");
+      setError("");
+      navigate("/dashboard");
     } catch (error) {
-      alert("Invalid credentials");
+      setError("Invalid credentials");
     }
   };
 
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-900">
-      <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-96">
-        <h2 className="text-white text-2xl mb-6 text-center">Login</h2>
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,#17385a,transparent_45%),radial-gradient(circle_at_bottom_right,#643d18,transparent_45%),#060c14] p-6">
+      <div className="w-full max-w-md rounded-3xl border border-white/15 bg-black/35 p-8 shadow-2xl backdrop-blur-xl">
+        <p className="mb-2 text-sm uppercase tracking-[0.2em] text-cyan-300">Smart Campus</p>
+        <h2 className="mb-2 text-3xl font-bold text-white">Operations Hub</h2>
+        <p className="mb-6 text-slate-300">Sign in to manage bookings, resources, and campus services.</p>
+
+        {error && <div className="mb-4 rounded-lg bg-rose-500/20 p-2 text-sm text-rose-100">{error}</div>}
 
         <input
-          className="w-full p-2 mb-4 rounded bg-gray-700 text-white"
+          className="mb-4 w-full rounded-lg border border-white/20 bg-white/10 p-3 text-white placeholder-slate-300"
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
         />
 
         <input
-          className="w-full p-2 mb-6 rounded bg-gray-700 text-white"
+          className="mb-6 w-full rounded-lg border border-white/20 bg-white/10 p-3 text-white placeholder-slate-300"
           type="password"
           placeholder="Password"
           value={password}
@@ -49,10 +54,12 @@ function LoginPage() {
 
         <button
           onClick={handleLogin}
-          className="w-full bg-purple-600 hover:bg-purple-700 text-white p-2 rounded"
+          className="w-full rounded-lg bg-cyan-500 p-3 font-semibold text-slate-950 transition hover:bg-cyan-400"
         >
-          Login
+          Enter Hub
         </button>
+
+        <p className="mt-4 text-xs text-slate-400">Demo users: admin/1234 and user/1234</p>
       </div>
     </div>
   );

@@ -1,35 +1,59 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useCallback, useEffect, useState, useContext } from "react";
 import api from "../api/api";
 import { AuthContext } from "../context/AuthContext.jsx";
-import { useNavigate } from "react-router-dom";
+import MainLayout from "../layout/MainLayout";
 
 function BookingsPage() {
-  const { auth, logout } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { auth } = useContext(AuthContext);
+  const isAdmin = auth.role === "ROLE_ADMIN";
 
   const [bookings, setBookings] = useState([]);
+  const [resources, setResources] = useState([]);
+  const [selectedResourceId, setSelectedResourceId] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [purpose, setPurpose] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [attendees, setAttendees] = useState("");
+  const [feedback, setFeedback] = useState("");
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     try {
-      const response = await api.get("/bookings");
+      const path = selectedResourceId
+        ? `/bookings/resource/${selectedResourceId}`
+        : "/bookings";
+      const response = await api.get(path);
       setBookings(response.data);
+      setFeedback("");
     } catch (error) {
-      alert("Unauthorized or error fetching bookings");
-      handleLogout();
+      setFeedback(error.response?.data || "Error fetching bookings");
     }
-  };
+  }, [selectedResourceId]);
+
+  const fetchResources = useCallback(async () => {
+    try {
+      const response = await api.get("/resources");
+      setResources(response.data);
+      if (response.data.length > 0 && !selectedResourceId) {
+        setSelectedResourceId(String(response.data[0].id));
+      }
+    } catch (error) {
+      setFeedback(error.response?.data || "Error fetching resources");
+    }
+  }, [selectedResourceId]);
 
   const createBooking = async () => {
     try {
-      await api.post("/bookings/1", {
+      if (!selectedResourceId) {
+        setFeedback("Select a resource first.");
+        return;
+      }
+
+      await api.post(`/bookings/${selectedResourceId}`, {
         purpose,
         startTime,
         endTime,
-        attendees,
+        attendees: Number(attendees),
       });
 
       setPurpose("");
@@ -37,117 +61,156 @@ function BookingsPage() {
       setEndTime("");
       setAttendees("");
 
+      setFeedback("Booking created successfully.");
       fetchBookings();
     } catch (error) {
-      alert("Error creating booking");
+      setFeedback(error.response?.data || "Error creating booking");
     }
   };
 
-  const approveBooking = async (id) => {
+  const updateBookingStatus = async (id, status) => {
     try {
-      await api.put(`/bookings/${id}/status?status=APPROVED`);
+      await api.put(`/bookings/${id}/status?status=${status}`);
+      setFeedback(`Booking updated to ${status}.`);
       fetchBookings();
     } catch (error) {
-      alert("Only ADMIN can approve");
+      setFeedback(error.response?.data || "Unable to update booking status");
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
+  const deleteBooking = async (id) => {
+    if (!window.confirm("Delete this booking?")) {
+      return;
+    }
+
+    try {
+      await api.delete(`/bookings/${id}`);
+      setFeedback("Booking deleted.");
+      fetchBookings();
+    } catch (error) {
+      setFeedback(error.response?.data || "Unable to delete booking");
+    }
   };
 
   useEffect(() => {
+    fetchResources();
+  }, [fetchResources]);
+
+  useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [fetchBookings]);
+
+  const visibleBookings = bookings.filter((item) =>
+    statusFilter === "ALL" ? true : item.status === statusFilter
+  );
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">
-          Bookings Dashboard
-          <span className="ml-3 bg-purple-600 text-white px-3 py-1 rounded text-sm">
-            {auth.role}
-          </span>
-        </h2>
+    <MainLayout role={auth.role}>
+      <div className="mb-6 rounded-3xl border border-orange-300/30 bg-gradient-to-r from-orange-400/20 to-cyan-400/20 p-6">
+        <h2 className="text-3xl font-bold">Booking Command Center</h2>
+        <p className="mt-2 text-slate-100">Schedule, review, and execute campus booking workflows.</p>
+      </div>
 
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+      {feedback && <div className="mb-4 rounded-xl bg-black/30 p-3 text-sm">{feedback}</div>}
+
+      <div className="mb-5 grid gap-3 rounded-2xl border border-white/10 bg-white/10 p-4 md:grid-cols-3">
+        <select
+          className="rounded-lg border border-white/20 bg-black/20 p-2"
+          value={selectedResourceId}
+          onChange={(e) => setSelectedResourceId(e.target.value)}
         >
-          Logout
+          <option value="">All Resources</option>
+          {resources.map((resource) => (
+            <option key={resource.id} value={resource.id}>{resource.name}</option>
+          ))}
+        </select>
+
+        <select
+          className="rounded-lg border border-white/20 bg-black/20 p-2"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="ALL">All Statuses</option>
+          <option value="PENDING">PENDING</option>
+          <option value="APPROVED">APPROVED</option>
+          <option value="REJECTED">REJECTED</option>
+          <option value="CANCELLED">CANCELLED</option>
+        </select>
+
+        <button className="rounded-lg bg-cyan-600 px-4 py-2 font-semibold hover:bg-cyan-500" onClick={fetchBookings}>
+          Refresh
         </button>
       </div>
 
-      {auth.role === "ROLE_USER" && (
-        <div className="bg-white p-6 rounded shadow mb-6">
-          <h3 className="text-lg font-semibold mb-4">Create Booking</h3>
+      <div className="mb-6 rounded-2xl border border-white/10 bg-white/10 p-5">
+        <h3 className="mb-4 text-lg font-semibold">Create Booking</h3>
 
+        <div className="grid gap-3 md:grid-cols-2">
           <input
-            className="border p-2 w-full mb-3"
+            className="rounded-lg border border-white/20 bg-black/20 p-2"
             placeholder="Purpose"
             value={purpose}
             onChange={(e) => setPurpose(e.target.value)}
           />
 
           <input
-            className="border p-2 w-full mb-3"
+            className="rounded-lg border border-white/20 bg-black/20 p-2"
             type="datetime-local"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
           />
 
           <input
-            className="border p-2 w-full mb-3"
+            className="rounded-lg border border-white/20 bg-black/20 p-2"
             type="datetime-local"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
           />
 
           <input
-            className="border p-2 w-full mb-3"
+            className="rounded-lg border border-white/20 bg-black/20 p-2"
             type="number"
             placeholder="Attendees"
             value={attendees}
             onChange={(e) => setAttendees(e.target.value)}
           />
-
-          <button
-            onClick={createBooking}
-            className="bg-blue-600 text-white px-4 py-2 rounded"
-          >
-            Create Booking
-          </button>
         </div>
-      )}
 
-      <div>
-        <h3 className="text-lg font-semibold mb-4">All Bookings</h3>
+        <button onClick={createBooking} className="mt-4 rounded-lg bg-emerald-600 px-4 py-2 font-semibold hover:bg-emerald-500">
+          Create Booking
+        </button>
+      </div>
 
-        {bookings.map((b) => (
-          <div
-            key={b.id}
-            className="bg-white p-4 rounded shadow mb-3"
-          >
-            <p><b>Purpose:</b> {b.purpose}</p>
-            <p><b>Status:</b> {b.status}</p>
-            <p><b>Start:</b> {b.startTime}</p>
-            <p><b>End:</b> {b.endTime}</p>
-            <p><b>Attendees:</b> {b.attendees}</p>
+      <div className="grid gap-3 md:grid-cols-2">
+        {visibleBookings.map((b) => (
+          <div key={b.id} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <h4 className="font-semibold">{b.purpose || "Untitled"}</h4>
+              <span className="rounded-full bg-white/15 px-2 py-1 text-xs">{b.status}</span>
+            </div>
+            <p className="text-sm text-slate-200">Resource: {b.resource?.name || "-"}</p>
+            <p className="text-sm text-slate-200">Start: {b.startTime?.replace("T", " ")}</p>
+            <p className="text-sm text-slate-200">End: {b.endTime?.replace("T", " ")}</p>
+            <p className="text-sm text-slate-200">Attendees: {b.attendees}</p>
 
-            {b.status === "PENDING" &&
-              auth.role === "ROLE_ADMIN" && (
-                <button
-                  onClick={() => approveBooking(b.id)}
-                  className="mt-2 bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  Approve
-                </button>
-              )}
+            {isAdmin && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {b.status === "PENDING" && (
+                  <>
+                    <button className="rounded bg-emerald-600 px-3 py-1" onClick={() => updateBookingStatus(b.id, "APPROVED")}>Approve</button>
+                    <button className="rounded bg-amber-500 px-3 py-1 text-black" onClick={() => updateBookingStatus(b.id, "REJECTED")}>Reject</button>
+                  </>
+                )}
+                {b.status === "APPROVED" && (
+                  <button className="rounded bg-slate-500 px-3 py-1" onClick={() => updateBookingStatus(b.id, "CANCELLED")}>Cancel</button>
+                )}
+                <button className="rounded bg-rose-600 px-3 py-1" onClick={() => deleteBooking(b.id)}>Delete</button>
+              </div>
+            )}
           </div>
         ))}
       </div>
-    </div>
+    </MainLayout>
   );
 }
 

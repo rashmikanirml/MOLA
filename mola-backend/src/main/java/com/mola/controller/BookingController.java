@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -33,6 +34,39 @@ public class BookingController {
     @GetMapping
     public ResponseEntity<List<Booking>> getAllBookings() {
         return ResponseEntity.ok(bookingService.getAllBookings());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Booking> getBookingById(@PathVariable Long id) {
+        return ResponseEntity.ok(bookingService.getBookingById(id));
+    }
+
+    @GetMapping("/resource/{resourceId}")
+    public ResponseEntity<List<Booking>> getBookingsByResource(@PathVariable Long resourceId) {
+        return ResponseEntity.ok(bookingService.getBookingsByResource(resourceId));
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<Map<String, Long>> getBookingStats() {
+        return ResponseEntity.ok(bookingService.getBookingStats());
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{id}")
+    public ResponseEntity<Booking> updateBooking(
+            @PathVariable Long id,
+            @RequestParam Long resourceId,
+            @Valid @RequestBody Booking booking) {
+
+        Booking updated = bookingService.updateBooking(id, resourceId, booking);
+        return ResponseEntity.ok(updated);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteBooking(@PathVariable Long id) {
+        bookingService.deleteBooking(id);
+        return ResponseEntity.noContent().build();
     }
 
     // Update booking status (ADMIN ONLY)
