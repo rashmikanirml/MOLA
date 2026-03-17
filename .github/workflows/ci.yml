@@ -1,0 +1,47 @@
+name: MOLA CI
+
+on:
+  push:
+    branches:
+      - main
+      - rns
+  pull_request:
+
+jobs:
+  backend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Build backend
+        working-directory: mola-backend
+        run: ./mvnw -DskipTests clean package
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: mola-frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mola-frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: mola-frontend
+        run: npm run build

@@ -51,6 +51,45 @@ Output:
 - Backend JAR artifacts in mola-backend/target
 - Frontend production bundle in mola-frontend/build
 
+## Run with Docker Compose
+
+From repository root:
+
+1. Run docker compose up --build
+2. Frontend is available at http://localhost:3000
+3. Backend is available at http://localhost:8080
+
+To stop containers:
+
+1. Run docker compose down
+
+## Generate Versioned Release ZIP
+
+From repository root:
+
+1. Run .\release.ps1
+
+Output:
+
+- dist/mola-release-<timestamp>-<commit>.zip
+
+The ZIP includes:
+
+- Backend JAR
+- Frontend production build
+- Docker artifacts (Dockerfiles, nginx config, docker-compose)
+
+## Continuous Integration
+
+GitHub Actions workflow:
+
+- .github/workflows/ci.yml
+
+CI runs on push and pull requests and performs:
+
+- Backend Maven build
+- Frontend npm build
+
 ## Manual Run
 
 Backend:
