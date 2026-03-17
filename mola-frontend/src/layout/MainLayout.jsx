@@ -21,7 +21,7 @@ function MainLayout({ children, role }) {
         className={`border-r border-white/10 bg-black/25 backdrop-blur-xl transition-all duration-300 ${open ? "w-64" : "w-20"} flex flex-col shadow-xl`}
       >
         <div className="p-6 font-bold text-xl border-b border-white/10 flex justify-between items-center">
-          {open ? "Campus Hub" : "CH"}
+          {open ? "MOLA" : "M"}
           <button
             onClick={() => setOpen(!open)}
             className="text-sm text-slate-300"

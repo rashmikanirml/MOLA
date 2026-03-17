@@ -31,7 +31,7 @@ function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top_left,#17385a,transparent_45%),radial-gradient(circle_at_bottom_right,#643d18,transparent_45%),#060c14] p-6">
       <div className="w-full max-w-md rounded-3xl border border-white/15 bg-black/35 p-8 shadow-2xl backdrop-blur-xl">
-        <p className="mb-2 text-sm uppercase tracking-[0.2em] text-cyan-300">Smart Campus</p>
+        <p className="mb-2 text-sm uppercase tracking-[0.2em] text-cyan-300">MOLA</p>
         <h2 className="mb-2 text-3xl font-bold text-white">Operations Hub</h2>
         <p className="mb-6 text-slate-300">Sign in to manage bookings, resources, and campus services.</p>
 

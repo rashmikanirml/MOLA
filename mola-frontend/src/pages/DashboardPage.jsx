@@ -45,7 +45,7 @@ function DashboardPage() {
   return (
     <MainLayout role={auth.role}>
       <div className="mb-8 rounded-3xl border border-cyan-300/30 bg-gradient-to-r from-cyan-500/20 to-amber-500/20 p-8">
-        <h1 className="text-3xl font-bold">Smart Campus Operations Hub</h1>
+        <h1 className="text-3xl font-bold">MOLA Operations Hub</h1>
         <p className="mt-2 text-slate-200">Live operations snapshot for bookings, spaces, and service reliability.</p>
       </div>
 
