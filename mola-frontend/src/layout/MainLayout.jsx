@@ -9,6 +9,7 @@ function MainLayout({ children, role }) {
     { path: "/dashboard", label: "Overview" },
     { path: "/bookings", label: "Bookings" },
     { path: "/resources", label: "Resources" },
+    { path: "/live-ops", label: "Live Ops" },
   ];
 
   if (role === "ROLE_ADMIN") {

@@ -6,6 +6,7 @@ import BookingsPage from "./pages/BookingsPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import ResourcesPage from "./pages/ResourcesPage.jsx";
 import UsersPage from "./pages/UsersPage.jsx";
+import LiveOpsPage from "./pages/LiveOpsPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function App() {
@@ -44,6 +45,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <ResourcesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/live-ops"
+              element={
+                <ProtectedRoute>
+                  <LiveOpsPage />
                 </ProtectedRoute>
               }
             />
