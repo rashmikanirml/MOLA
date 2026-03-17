@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "../api/api";
 import MainLayout from "../layout/MainLayout";
 import { useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { AuthContext } from "../context/AuthContext.jsx";
 
 function DashboardPage() {
 
