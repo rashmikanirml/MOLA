@@ -9,8 +9,16 @@ import UsersPage from "./pages/UsersPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 function App() {
+  const bubbles = Array.from({ length: 14 });
+
   return (
     <div className="app-shell">
+      <div className="bubble-field" aria-hidden="true">
+        {bubbles.map((_, index) => (
+          <span key={index} className="bubble" />
+        ))}
+      </div>
+
       <AuthProvider>
         <Router>
           <Routes>
