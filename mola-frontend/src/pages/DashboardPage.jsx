@@ -72,6 +72,7 @@ function DashboardPage() {
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState("");
   const [error, setError] = useState("");
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState([
@@ -440,63 +441,85 @@ function DashboardPage() {
         ))}
       </div>
 
-      <section className="mt-8 rounded-2xl border border-cyan-300/30 bg-black/30 p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold">AI Operations Chatbot</h2>
-            <p className="text-sm text-slate-300">Ask for quick insights from live dashboard signals.</p>
-          </div>
-          <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-100">
-            {isChatLoading ? "Thinking..." : "Ready"}
-          </span>
-        </div>
 
-        <div className="h-[320px] overflow-y-auto rounded-xl border border-white/10 bg-slate-950/40 p-4">
-          {chatMessages.map((message) => (
-            <div
-              key={message.id}
-              className={`mb-3 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              <div
-                className={`max-w-[88%] rounded-2xl px-4 py-2 text-sm ${
-                  message.role === "user"
-                    ? "bg-cyan-500/30 text-cyan-50"
-                    : "border border-white/10 bg-white/10 text-slate-100"
-                }`}
+      {isChatOpen && (
+        <section className="fixed bottom-24 right-4 z-50 w-[calc(100vw-2rem)] max-w-md rounded-2xl border border-cyan-300/30 bg-slate-950/95 p-4 shadow-2xl backdrop-blur sm:right-6">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-semibold">AI Operations Chatbot</h2>
+              <p className="text-xs text-slate-300">Live insights from dashboard data.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-2 py-1 text-[10px] text-cyan-100">
+                {isChatLoading ? "Thinking..." : "Ready"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsChatOpen(false)}
+                className="rounded-md border border-white/20 px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
+                aria-label="Close AI chatbot"
               >
-                {message.text}
-              </div>
+                Close
+              </button>
             </div>
-          ))}
+          </div>
 
-          {isChatLoading && (
-            <div className="mb-2 flex justify-start">
-              <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-slate-300">
-                Analyzing dashboard context...
+          <div className="h-[300px] overflow-y-auto rounded-xl border border-white/10 bg-black/30 p-3">
+            {chatMessages.map((message) => (
+              <div
+                key={message.id}
+                className={`mb-3 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[88%] rounded-2xl px-4 py-2 text-sm ${
+                    message.role === "user"
+                      ? "bg-cyan-500/30 text-cyan-50"
+                      : "border border-white/10 bg-white/10 text-slate-100"
+                  }`}
+                >
+                  {message.text}
+                </div>
               </div>
-            </div>
-          )}
+            ))}
 
-          <div ref={chatBottomRef} />
-        </div>
+            {isChatLoading && (
+              <div className="mb-2 flex justify-start">
+                <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-slate-300">
+                  Analyzing dashboard context...
+                </div>
+              </div>
+            )}
 
-        <form onSubmit={handleChatSubmit} className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <input
-            type="text"
-            value={chatInput}
-            onChange={(event) => setChatInput(event.target.value)}
-            placeholder="Ask: What is our booking status today?"
-            className="w-full rounded-xl border border-white/15 bg-slate-900/60 px-4 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:border-cyan-300/60"
-          />
-          <button
-            type="submit"
-            disabled={isChatLoading || !chatInput.trim()}
-            className="rounded-xl bg-cyan-500/80 px-5 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Send
-          </button>
-        </form>
-      </section>
+            <div ref={chatBottomRef} />
+          </div>
+
+          <form onSubmit={handleChatSubmit} className="mt-3 flex gap-2">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(event) => setChatInput(event.target.value)}
+              placeholder="Ask: What is our booking status today?"
+              className="w-full rounded-xl border border-white/15 bg-slate-900/60 px-4 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:border-cyan-300/60"
+            />
+            <button
+              type="submit"
+              disabled={isChatLoading || !chatInput.trim()}
+              className="rounded-xl bg-cyan-500/80 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Send
+            </button>
+          </form>
+        </section>
+      )}
+
+      <button
+        type="button"
+        onClick={() => setIsChatOpen((open) => !open)}
+        className="fixed bottom-6 right-4 z-50 rounded-full border border-cyan-300/40 bg-cyan-500/90 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg transition hover:bg-cyan-400 sm:right-6"
+        aria-label="Toggle AI chatbot"
+      >
+        {isChatOpen ? "Hide AI Chat" : "AI Chat"}
+      </button>
     </MainLayout>
   );
 }
