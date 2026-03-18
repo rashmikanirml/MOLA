@@ -34,6 +34,11 @@ public class Booking {
 
     private Integer attendees;
 
+    @Column
+    private String requestedBy;
+
+    private String adminDecisionReason;
+
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
 }

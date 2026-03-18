@@ -46,7 +46,7 @@ public class AuthController {
 
         String token = jwtUtil.generateToken(user.getUsername(), role);
 
-        return new LoginResponse(token, role);
+                return new LoginResponse(token, role, user.getUsername());
     }
 
         @GetMapping("/users")
@@ -54,7 +54,8 @@ public class AuthController {
         public List<Map<String, String>> getSystemUsers() {
                 return List.of(
                                 Map.of("username", "admin", "role", "ROLE_ADMIN"),
-                                Map.of("username", "user", "role", "ROLE_USER")
+                                Map.of("username", "user", "role", "ROLE_USER"),
+                                Map.of("username", "tech", "role", "ROLE_TECHNICIAN")
                 );
         }
 }

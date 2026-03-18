@@ -22,10 +22,22 @@ function ResourcesPage() {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [feedback, setFeedback] = useState("");
+  const [filters, setFilters] = useState({
+    type: "ALL",
+    minCapacity: "",
+    location: "",
+    status: "ALL",
+  });
 
   const loadResources = async () => {
     try {
-      const response = await api.get("/resources");
+      const params = new URLSearchParams();
+      if (filters.type !== "ALL") params.set("type", filters.type);
+      if (filters.status !== "ALL") params.set("status", filters.status);
+      if (filters.minCapacity) params.set("minCapacity", filters.minCapacity);
+      if (filters.location.trim()) params.set("location", filters.location.trim());
+
+      const response = await api.get(`/resources${params.toString() ? `?${params.toString()}` : ""}`);
       setResources(response.data);
       setFeedback("");
     } catch (err) {
@@ -35,7 +47,7 @@ function ResourcesPage() {
 
   useEffect(() => {
     loadResources();
-  }, []);
+  }, [filters]);
 
   const submitForm = async (event) => {
     event.preventDefault();
@@ -98,6 +110,25 @@ function ResourcesPage() {
       </div>
 
       {feedback && <div className="mb-4 rounded-xl bg-black/30 p-3 text-sm">{feedback}</div>}
+
+      <div className="mb-4 grid gap-3 rounded-2xl border border-white/10 bg-white/10 p-4 md:grid-cols-4">
+        <select className="rounded-lg border border-white/20 bg-black/20 p-2" value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })}>
+          <option value="ALL">All Types</option>
+          <option value="ROOM">ROOM</option>
+          <option value="LAB">LAB</option>
+          <option value="EQUIPMENT">EQUIPMENT</option>
+        </select>
+
+        <input className="rounded-lg border border-white/20 bg-black/20 p-2" type="number" min="1" placeholder="Min capacity" value={filters.minCapacity} onChange={(e) => setFilters({ ...filters, minCapacity: e.target.value })} />
+
+        <input className="rounded-lg border border-white/20 bg-black/20 p-2" placeholder="Location contains" value={filters.location} onChange={(e) => setFilters({ ...filters, location: e.target.value })} />
+
+        <select className="rounded-lg border border-white/20 bg-black/20 p-2" value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
+          <option value="ALL">All Statuses</option>
+          <option value="ACTIVE">ACTIVE</option>
+          <option value="OUT_OF_SERVICE">OUT_OF_SERVICE</option>
+        </select>
+      </div>
 
       {isAdmin && (
         <form onSubmit={submitForm} className="mb-6 grid gap-3 rounded-2xl border border-white/10 bg-white/10 p-5 md:grid-cols-3">

@@ -1,6 +1,8 @@
 package com.mola.controller;
 
 import com.mola.entity.Resource;
+import com.mola.entity.ResourceStatus;
+import com.mola.entity.ResourceType;
 import com.mola.service.ResourceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +34,17 @@ public class ResourceController {
      * Get all resources
      */
     @GetMapping
-    public ResponseEntity<List<Resource>> getAllResources() {
-        return ResponseEntity.ok(resourceService.getAll());
+    public ResponseEntity<List<Resource>> getAllResources(
+            @RequestParam(required = false) ResourceType type,
+            @RequestParam(required = false) Integer minCapacity,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) ResourceStatus status
+    ) {
+        if (type == null && minCapacity == null && (location == null || location.isBlank()) && status == null) {
+            return ResponseEntity.ok(resourceService.getAll());
+        }
+
+        return ResponseEntity.ok(resourceService.search(type, minCapacity, location, status));
     }
 
     /**

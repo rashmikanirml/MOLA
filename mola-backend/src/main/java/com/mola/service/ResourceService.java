@@ -1,12 +1,15 @@
 package com.mola.service;
 
 import com.mola.entity.Resource;
+import com.mola.entity.ResourceStatus;
+import com.mola.entity.ResourceType;
 import com.mola.exception.ResourceNotFoundException;
 import com.mola.repository.ResourceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +23,19 @@ public class ResourceService {
 
     public List<Resource> getAll() {
         return repository.findAll();
+    }
+
+    public List<Resource> search(ResourceType type,
+                                 Integer minCapacity,
+                                 String location,
+                                 ResourceStatus status) {
+        return repository.findAll().stream()
+                .filter(item -> type == null || item.getType() == type)
+                .filter(item -> minCapacity == null || (item.getCapacity() != null && item.getCapacity() >= minCapacity))
+                .filter(item -> location == null || location.isBlank() ||
+                        (item.getLocation() != null && item.getLocation().toLowerCase().contains(location.toLowerCase())))
+                .filter(item -> status == null || item.getStatus() == status)
+                .collect(Collectors.toList());
     }
 
     public Resource getById(Long id) {

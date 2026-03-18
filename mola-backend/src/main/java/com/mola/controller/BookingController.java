@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,16 +25,23 @@ public class BookingController {
     @PostMapping("/{resourceId}")
     public ResponseEntity<Booking> createBooking(
             @PathVariable Long resourceId,
-            @Valid @RequestBody Booking booking) {
+            @Valid @RequestBody Booking booking,
+            Authentication authentication) {
 
-        Booking created = bookingService.createBooking(resourceId, booking);
+        Booking created = bookingService.createBooking(resourceId, booking, authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     // Get all bookings (Authenticated users)
     @GetMapping
-    public ResponseEntity<List<Booking>> getAllBookings() {
-        return ResponseEntity.ok(bookingService.getAllBookings());
+    public ResponseEntity<List<Booking>> getAllBookings(
+            @RequestParam(required = false) Long resourceId,
+            @RequestParam(required = false) BookingStatus status,
+            Authentication authentication) {
+        String role = authentication.getAuthorities().iterator().next().getAuthority();
+        return ResponseEntity.ok(
+                bookingService.getBookings(role, authentication.getName(), resourceId, status)
+        );
     }
 
     @GetMapping("/{id}")
@@ -42,8 +50,10 @@ public class BookingController {
     }
 
     @GetMapping("/resource/{resourceId}")
-    public ResponseEntity<List<Booking>> getBookingsByResource(@PathVariable Long resourceId) {
-        return ResponseEntity.ok(bookingService.getBookingsByResource(resourceId));
+    public ResponseEntity<List<Booking>> getBookingsByResource(@PathVariable Long resourceId,
+                                                                Authentication authentication) {
+        String role = authentication.getAuthorities().iterator().next().getAuthority();
+        return ResponseEntity.ok(bookingService.getBookingsByResource(role, authentication.getName(), resourceId));
     }
 
     @GetMapping("/stats")
@@ -74,9 +84,10 @@ public class BookingController {
     @PutMapping("/{id}/status")
     public ResponseEntity<Booking> updateStatus(
             @PathVariable Long id,
-            @RequestParam BookingStatus status) {
+            @RequestParam BookingStatus status,
+            @RequestParam(required = false) String reason) {
 
-        Booking updated = bookingService.updateStatus(id, status);
+        Booking updated = bookingService.updateStatus(id, status, reason);
         return ResponseEntity.ok(updated);
     }
 }

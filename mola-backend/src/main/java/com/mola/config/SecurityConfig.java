@@ -1,6 +1,8 @@
 package com.mola.config;
 
 import com.mola.security.JwtAuthenticationFilter;
+import com.mola.security.OAuth2AuthenticationSuccessHandler;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -27,9 +30,15 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler,
+                          ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.oAuth2AuthenticationSuccessHandler = oAuth2AuthenticationSuccessHandler;
+        this.clientRegistrationRepositoryProvider = clientRegistrationRepositoryProvider;
     }
 
     @Bean
@@ -44,11 +53,16 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/oauth2/**", "/login/**").permitAll()
                     .requestMatchers("/api/bookings/*/status").hasRole("ADMIN")
                     .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter,
                     UsernamePasswordAuthenticationFilter.class);
+
+        if (clientRegistrationRepositoryProvider.getIfAvailable() != null) {
+            http.oauth2Login(oauth -> oauth.successHandler(oAuth2AuthenticationSuccessHandler));
+        }
 
         return http.build();
     }
@@ -85,7 +99,13 @@ public class SecurityConfig {
                 .roles("ADMIN")
                 .build();
 
-        return new InMemoryUserDetailsManager(user, admin);
+        var technician = User.builder()
+            .username("tech")
+            .password(passwordEncoder.encode("1234"))
+            .roles("TECHNICIAN")
+            .build();
+
+        return new InMemoryUserDetailsManager(user, admin, technician);
     }
 
     @Bean

@@ -7,6 +7,7 @@ import DashboardPage from "./pages/DashboardPage.jsx";
 import ResourcesPage from "./pages/ResourcesPage.jsx";
 import UsersPage from "./pages/UsersPage.jsx";
 import LiveOpsPage from "./pages/LiveOpsPage.jsx";
+import TicketsPage from "./pages/TicketsPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import AiChatbotPopup from "./components/AiChatbotPopup.jsx";
 
@@ -54,6 +55,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <LiveOpsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tickets"
+              element={
+                <ProtectedRoute>
+                  <TicketsPage />
                 </ProtectedRoute>
               }
             />

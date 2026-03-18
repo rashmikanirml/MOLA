@@ -70,7 +70,23 @@ function BookingsPage() {
 
   const updateBookingStatus = async (id, status) => {
     try {
-      await api.put(`/bookings/${id}/status?status=${status}`);
+      const params = new URLSearchParams();
+      params.set("status", status);
+
+      if (status === "REJECTED") {
+        const reason = window.prompt("Enter rejection reason:");
+        if (!reason) {
+          return;
+        }
+        params.set("reason", reason);
+      }
+
+      if (status === "CANCELLED") {
+        const reason = window.prompt("Optional cancellation reason:") || "Cancelled by admin";
+        params.set("reason", reason);
+      }
+
+      await api.put(`/bookings/${id}/status?${params.toString()}`);
       setFeedback(`Booking updated to ${status}.`);
       fetchBookings();
     } catch (error) {
@@ -192,6 +208,8 @@ function BookingsPage() {
             <p className="text-sm text-slate-200">Start: {b.startTime?.replace("T", " ")}</p>
             <p className="text-sm text-slate-200">End: {b.endTime?.replace("T", " ")}</p>
             <p className="text-sm text-slate-200">Attendees: {b.attendees}</p>
+            <p className="text-sm text-slate-200">Requested By: {b.requestedBy || "-"}</p>
+            {b.adminDecisionReason && <p className="mt-1 text-xs text-amber-100">Reason: {b.adminDecisionReason}</p>}
 
             {isAdmin && (
               <div className="mt-3 flex flex-wrap gap-2">

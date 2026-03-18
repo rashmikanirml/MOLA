@@ -1,15 +1,28 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext.jsx";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useContext(AuthContext);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get("token");
+    const role = params.get("role");
+    const username = params.get("username");
+
+    if (token && role) {
+      login(token, role, username || "oauth-user");
+      navigate("/dashboard", { replace: true });
+    }
+  }, [location.search, login, navigate]);
 
   const handleLogin = async () => {
     try {
@@ -18,9 +31,9 @@ function LoginPage() {
         { username, password }
       );
 
-      const { token, role } = response.data;
+      const { token, role, username: authUsername } = response.data;
 
-      login(token, role);
+      login(token, role, authUsername || username);
       setError("");
       navigate("/dashboard");
     } catch (error) {
@@ -59,7 +72,14 @@ function LoginPage() {
           Enter Hub
         </button>
 
-        <p className="mt-4 text-xs text-slate-400">Demo users: admin/1234 and user/1234</p>
+        <a
+          href="http://localhost:8080/oauth2/authorization/google"
+          className="mt-3 block w-full rounded-lg border border-white/25 bg-white/10 p-3 text-center font-semibold text-white transition hover:bg-white/20"
+        >
+          Continue with Google (OAuth2)
+        </a>
+
+        <p className="mt-4 text-xs text-slate-400">Demo users: admin/1234, user/1234, tech/1234</p>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -18,8 +19,9 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final ResourceRepository resourceRepository;
+    private final NotificationService notificationService;
 
-    public Booking createBooking(Long resourceId, Booking booking) {
+    public Booking createBooking(Long resourceId, Booking booking, String requestedBy) {
 
         // 1️⃣ Check resource exists
         Resource resource = resourceRepository.findById(resourceId)
@@ -33,12 +35,38 @@ public class BookingService {
         // 4️⃣ Set relationship & default status
         booking.setResource(resource);
         booking.setStatus(BookingStatus.PENDING);
+        booking.setRequestedBy(requestedBy);
+        booking.setAdminDecisionReason(null);
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        notificationService.create(
+            saved.getRequestedBy(),
+            "Booking request created",
+            "Your booking request for " + saved.getResource().getName() + " is pending review.",
+            NotificationType.BOOKING
+        );
+        return saved;
     }
 
-    public List<Booking> getAllBookings() {
-        return bookingRepository.findAll();
+    public List<Booking> getBookings(String role,
+                                     String username,
+                                     Long resourceId,
+                                     BookingStatus status) {
+        List<Booking> base;
+
+        if ("ROLE_ADMIN".equals(role)) {
+            base = resourceId == null ? bookingRepository.findAll() : bookingRepository.findByResourceId(resourceId);
+        } else {
+            base = resourceId == null
+                    ? bookingRepository.findByRequestedBy(username)
+                    : bookingRepository.findByRequestedByAndResourceId(username, resourceId);
+        }
+
+        if (status == null) {
+            return base;
+        }
+
+        return base.stream().filter(item -> item.getStatus() == status).collect(Collectors.toList());
     }
 
     public Booking getBookingById(Long bookingId) {
@@ -48,8 +76,8 @@ public class BookingService {
                 );
     }
 
-    public List<Booking> getBookingsByResource(Long resourceId) {
-        return bookingRepository.findByResourceId(resourceId);
+    public List<Booking> getBookingsByResource(String role, String username, Long resourceId) {
+        return getBookings(role, username, resourceId, null);
     }
 
     public Booking updateBooking(Long bookingId, Long resourceId, Booking updated) {
@@ -86,7 +114,7 @@ public class BookingService {
         return stats;
     }
 
-    public Booking updateStatus(Long bookingId, BookingStatus newStatus) {
+    public Booking updateStatus(Long bookingId, BookingStatus newStatus, String reason) {
 
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() ->
@@ -97,18 +125,32 @@ public class BookingService {
         if (booking.getStatus() == BookingStatus.PENDING &&
                 (newStatus == BookingStatus.APPROVED || newStatus == BookingStatus.REJECTED)) {
 
+            if (newStatus == BookingStatus.REJECTED && (reason == null || reason.isBlank())) {
+                throw new IllegalArgumentException("A reason is required when rejecting a booking");
+            }
+
             booking.setStatus(newStatus);
+            booking.setAdminDecisionReason(reason);
 
         } else if (booking.getStatus() == BookingStatus.APPROVED &&
                 newStatus == BookingStatus.CANCELLED) {
 
             booking.setStatus(newStatus);
+            booking.setAdminDecisionReason(reason);
 
         } else {
             throw new IllegalArgumentException("Invalid booking status transition");
         }
 
-        return bookingRepository.save(booking);
+        Booking saved = bookingRepository.save(booking);
+        notificationService.create(
+            saved.getRequestedBy(),
+            "Booking status updated",
+            "Booking #" + saved.getId() + " is now " + saved.getStatus() +
+                (saved.getAdminDecisionReason() != null ? " (" + saved.getAdminDecisionReason() + ")" : ""),
+            NotificationType.BOOKING
+        );
+        return saved;
     }
 
     private void validateTimeRange(java.time.LocalDateTime startTime,
