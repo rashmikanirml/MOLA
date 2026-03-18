@@ -37,32 +37,9 @@ function toDateKey(dateLike) {
   return `${year}-${month}-${day}`;
 }
 
-function buildLocalAssistantReply(message, context) {
-  const text = (message || "").toLowerCase();
-
-  if (text.includes("pending") || text.includes("approval")) {
-    return `There are currently ${context.stats.PENDING || 0} pending bookings. Prioritize high-impact spaces first and clear old requests to reduce queue time.`;
-  }
-
-  if (text.includes("resource") || text.includes("room") || text.includes("lab")) {
-    return `${context.activeResources} out of ${context.totalResources} resources are ACTIVE. You can open the Resources page to activate unavailable spaces and improve booking throughput.`;
-  }
-
-  if (text.includes("today") || text.includes("schedule") || text.includes("calendar")) {
-    return `Today has ${context.todaysBookings} bookings scheduled. Check the Overview Calendar and Recent Bookings panel for quick conflict scanning.`;
-  }
-
-  if (text.includes("status") || text.includes("summary") || text.includes("overview")) {
-    return `Current snapshot: Total ${context.stats.TOTAL || 0}, Pending ${context.stats.PENDING || 0}, Approved ${context.stats.APPROVED || 0}, Rejected ${context.stats.REJECTED || 0}, Cancelled ${context.stats.CANCELLED || 0}.`;
-  }
-
-  return "I can help with booking status, pending approvals, resource utilization, and schedule insights. Ask something like: 'How many pending requests do we have?'";
-}
-
 function DashboardPage() {
   const { auth } = useContext(AuthContext);
   const watchRef = useRef(null);
-  const chatBottomRef = useRef(null);
 
   const [stats, setStats] = useState({ TOTAL: 0, PENDING: 0, APPROVED: 0, REJECTED: 0, CANCELLED: 0 });
   const [resources, setResources] = useState([]);
@@ -72,17 +49,6 @@ function DashboardPage() {
   const [location, setLocation] = useState(null);
   const [locationError, setLocationError] = useState("");
   const [error, setError] = useState("");
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [chatInput, setChatInput] = useState("");
-  const [isChatLoading, setIsChatLoading] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    {
-      id: "welcome",
-      role: "assistant",
-      text: "Hi, I am MOLA AI Assistant. I can summarize bookings, resource activity, and operational signals from this dashboard.",
-      createdAt: new Date().toISOString(),
-    },
-  ]);
 
   const loadStats = async () => {
     try {
@@ -196,79 +162,6 @@ function DashboardPage() {
 
     return tiles;
   }, [bookingsByDay, monthMeta, monthStart]);
-
-  const todaysBookings = useMemo(() => {
-    const todayKey = toDateKey(new Date());
-    return bookingsByDay.get(todayKey)?.length || 0;
-  }, [bookingsByDay]);
-
-  useEffect(() => {
-    if (chatBottomRef.current) {
-      chatBottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  }, [chatMessages, isChatLoading]);
-
-  const handleChatSubmit = async (event) => {
-    event.preventDefault();
-
-    const trimmed = chatInput.trim();
-    if (!trimmed || isChatLoading) {
-      return;
-    }
-
-    const userMessage = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      text: trimmed,
-      createdAt: new Date().toISOString(),
-    };
-
-    const dashboardContext = {
-      stats,
-      totalResources: resources.length,
-      activeResources,
-      todaysBookings,
-    };
-
-    setChatMessages((previous) => [...previous, userMessage]);
-    setChatInput("");
-    setIsChatLoading(true);
-
-    try {
-      const response = await api.post("/ai/chat", {
-        message: trimmed,
-        context: dashboardContext,
-      });
-
-      const assistantText =
-        response?.data?.reply ||
-        response?.data?.message ||
-        buildLocalAssistantReply(trimmed, dashboardContext);
-
-      setChatMessages((previous) => [
-        ...previous,
-        {
-          id: `assistant-${Date.now()}`,
-          role: "assistant",
-          text: assistantText,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-    } catch (_err) {
-      const fallback = buildLocalAssistantReply(trimmed, dashboardContext);
-      setChatMessages((previous) => [
-        ...previous,
-        {
-          id: `assistant-fallback-${Date.now()}`,
-          role: "assistant",
-          text: fallback,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-    } finally {
-      setIsChatLoading(false);
-    }
-  };
 
   const mapCenter = location || { lat: 13.0827, lng: 80.2707, accuracy: 1000 };
 
@@ -441,85 +334,6 @@ function DashboardPage() {
         ))}
       </div>
 
-
-      {isChatOpen && (
-        <section className="fixed bottom-24 right-4 z-50 w-[calc(100vw-2rem)] max-w-md rounded-2xl border border-cyan-300/30 bg-slate-950/95 p-4 shadow-2xl backdrop-blur sm:right-6">
-          <div className="mb-3 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-base font-semibold">AI Operations Chatbot</h2>
-              <p className="text-xs text-slate-300">Live insights from dashboard data.</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-full border border-cyan-300/30 bg-cyan-400/10 px-2 py-1 text-[10px] text-cyan-100">
-                {isChatLoading ? "Thinking..." : "Ready"}
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsChatOpen(false)}
-                className="rounded-md border border-white/20 px-2 py-1 text-xs text-slate-200 hover:bg-white/10"
-                aria-label="Close AI chatbot"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-
-          <div className="h-[300px] overflow-y-auto rounded-xl border border-white/10 bg-black/30 p-3">
-            {chatMessages.map((message) => (
-              <div
-                key={message.id}
-                className={`mb-3 flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[88%] rounded-2xl px-4 py-2 text-sm ${
-                    message.role === "user"
-                      ? "bg-cyan-500/30 text-cyan-50"
-                      : "border border-white/10 bg-white/10 text-slate-100"
-                  }`}
-                >
-                  {message.text}
-                </div>
-              </div>
-            ))}
-
-            {isChatLoading && (
-              <div className="mb-2 flex justify-start">
-                <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-2 text-sm text-slate-300">
-                  Analyzing dashboard context...
-                </div>
-              </div>
-            )}
-
-            <div ref={chatBottomRef} />
-          </div>
-
-          <form onSubmit={handleChatSubmit} className="mt-3 flex gap-2">
-            <input
-              type="text"
-              value={chatInput}
-              onChange={(event) => setChatInput(event.target.value)}
-              placeholder="Ask: What is our booking status today?"
-              className="w-full rounded-xl border border-white/15 bg-slate-900/60 px-4 py-2 text-sm text-slate-100 outline-none placeholder:text-slate-400 focus:border-cyan-300/60"
-            />
-            <button
-              type="submit"
-              disabled={isChatLoading || !chatInput.trim()}
-              className="rounded-xl bg-cyan-500/80 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Send
-            </button>
-          </form>
-        </section>
-      )}
-
-      <button
-        type="button"
-        onClick={() => setIsChatOpen((open) => !open)}
-        className="fixed bottom-6 right-4 z-50 rounded-full border border-cyan-300/40 bg-cyan-500/90 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg transition hover:bg-cyan-400 sm:right-6"
-        aria-label="Toggle AI chatbot"
-      >
-        {isChatOpen ? "Hide AI Chat" : "AI Chat"}
-      </button>
     </MainLayout>
   );
 }

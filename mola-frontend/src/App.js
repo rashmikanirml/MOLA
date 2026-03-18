@@ -8,6 +8,7 @@ import ResourcesPage from "./pages/ResourcesPage.jsx";
 import UsersPage from "./pages/UsersPage.jsx";
 import LiveOpsPage from "./pages/LiveOpsPage.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import AiChatbotPopup from "./components/AiChatbotPopup.jsx";
 
 function App() {
   const bubbles = Array.from({ length: 14 });
@@ -65,6 +66,7 @@ function App() {
               }
             />
           </Routes>
+          <AiChatbotPopup />
         </Router>
       </AuthProvider>
     </div>
